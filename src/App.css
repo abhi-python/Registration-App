@@ -1,38 +1,59 @@
-.App {
-  text-align: center;
+.user-form{
+  background-color: #f5f5f5;
+  padding: 30px;
 }
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.head-section{
+  width: 100%;
+  display: inline-block;
+  font-weight: bold;
+  font-size: 20px;
+  text-decoration: underline;
+  margin-bottom: 20px;
 }
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.required{
+  color: red;
 }
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.personal-details{
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.input-field{
+  display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  gap: 26px;
 }
-
-.App-link {
-  color: #61dafb;
+.buttons{
+  display: flex;
+  justify-content: flex-end;
+  gap: 30px;
 }
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.submit{
+  background: #2f7d31;
+    color: white;
+    padding: 12px;
+    font-size: 21px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 1px solid #2f7d31;
+}
+.delete{
+  color: red;
+  padding: 12px;
+  font-size: 21px;
+  border-radius: 5px;
+  cursor: pointer;
+  border: 1px solid red;
+}
+input, select{
+  font-size: 18px;
+  padding: 5px;
+  border-radius: 5px;
+  width: fit-content;
+}
+label{
+  font-size: 20px;
+}
+.errors{
+  color: red;
 }
