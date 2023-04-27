@@ -7,35 +7,13 @@ import Select from "react-select";
 import { Country, State, City } from "country-state-city";
 import { db } from "./firebase-config";
 import { collection, addDoc } from "firebase/firestore";
+import { Link } from "react-router-dom";
+import UserDetails from "./UserDetails";
 
 const UserRegistrationForm = () => {
   const panReg =
     /(^([a-zA-Z]){5}([0-9]){4}([a-zA-Z]){1}?$)|(^([0-9]){4}([a-zA-Z]){3}?$)/;
   const adharReg = /^\d{12}$/;
-
-  // const schema = yup.object().shape({
-  //   name: yup.string().required("Name is required"),
-  //   dob: yup.number().required("Age is required"),
-  //   sex: yup.string().required("Sex is required"),
-  //   // email: yup.string().email('Invalid email address'),
-  //   // mobile: yup.string().matches(/^[6-9]\d{9}$/, 'Invalid Indian mobile number'),
-  //   // emergencyContact: yup.string().matches(/^[6-9]\d{9}$/, 'Invalid Indian mobile number'),
-  //   cardType: yup.string().required("ID type is required"),
-  //   cardNumber: yup.string().when("cardType", {
-  //     is: "aadhar",
-  //     then: yup.string().matches(/^\d{12}$/, "Invalid Aadhar card number"),
-  //     otherwise: yup.string().when("cardType", {
-  //       is: "pan",
-  //       then: yup
-  //         .string()
-  //         .matches(
-  //           /^([a-zA-Z]){5}([0-9]){4}([a-zA-Z]){1}?$/,
-  //           "Invalid PAN card number"
-  //         ),
-  //     }),
-  //   }),
-  // });
-
   const schema = yup
     .object()
     .shape({
@@ -51,21 +29,21 @@ const UserRegistrationForm = () => {
         .nullable(),
 
       idType: yup.string().required("ID type is required"),
-      id: yup.string().when("idType", {
-        is: "Aadhar",
-        then: yup
-          .string()
-          .matches(
-            /^\d{12}$/,
-            "Govt Id must be a valid 12-digit numeric string"
-          ),
-        otherwise: yup
-          .string()
-          .matches(
-            /^[A-Za-z]{5}\d{4}[A-Za-z]{1}$/,
-            "Govt Id must be a valid 10-digit alpha-numeric string"
-          ),
-      }),
+      // id: yup.string().when("idType", {
+      //   is: "Aadhar",
+      //   then: yup
+      //     .string()
+      //     .matches(
+      //       /^\d{12}$/,
+      //       "Govt Id must be a valid 12-digit numeric string"
+      //     ),
+      //   otherwise: yup
+      //     .string()
+      //     .matches(
+      //       /^[A-Za-z]{5}\d{4}[A-Za-z]{1}$/,
+      //       "Govt Id must be a valid 10-digit alpha-numeric string"
+      //     ),
+      // }),
       emergencyNumber: yup
         .string()
         .matches(
@@ -74,36 +52,7 @@ const UserRegistrationForm = () => {
         )
         .nullable(),
 
-      // when("cardType", {
-      //   is: "pan",
-      //   then: yup
-      //     .string()
-      //     .matches(
-      //       /^([a-zA-Z]){5}([0-9]){4}([a-zA-Z]){1}?$/,
-      //       "Invalid PAN card number"
-      //     ),
-      // }),
-      // }),
-
-      // cardNumber: yup.string().when(["cardType"], {
-      //   is: (cardType) => cardType === "pan",
-      //   then: yup.string().matches(panReg, "Invalid Pan card number"),
-      // }),
-
-      // cardType: yup.string().required(),
-      // cardNumber: yup.string().when("cardType", {
-      //   is: "pan",
-      //   then: yup.string().matches(panReg, "Invalid PAN card number"),
-      //   otherwise: yup.string().when("cardType", {
-      //     is: "adhaar",
-      //     then: yup.string().matches(adharReg, "Invalid Aadhaar card number"),
-      //   }),
-      // }),
-
-      // cardNumber: yup.string().matches(panReg, "Invalid Pan card number"),
-      // cardNumber: yup.string().matches(adharReg, "Invalid Adhaar card number"),
-    })
-    .required();
+    });
   const [countries, setCountries] = useState([]);
   const [countryName, setCountryName] = useState("");
   const [states, setStates] = useState([]);
@@ -117,11 +66,7 @@ const UserRegistrationForm = () => {
     reset,
     watch,
   } = useForm({
-    // initialValues: {
-    //   country: "India",
-    //   state: null,
-    //   city: null,
-    // },
+
     resolver: yupResolver(schema),
   });
   const onSubmit = async (data) => {
@@ -277,48 +222,6 @@ const UserRegistrationForm = () => {
               }
             />
             {errors.id && <p className="errors">{errors.id.message}</p>}
-            {/* <label>Govt Issued Id</label>
-            <select {...register("idType")}>
-              <option value="">Id Type</option>
-              <option value="adhar">Adhar</option>
-              <option value="pan">Pan</option>
-            </select>
-
-            {/* {errors.name && (
-              <span className="errors">{errors.name?.message}</span>
-            )} */}
-            {/* {errors.idType && (
-              <span className="errors">{errors.idType?.message}</span>
-            )}
-            <input
-              {...register("govtIdValue", {
-                required: "Card number is required",
-                pattern: {
-                  value:
-                    watch("idType") === "pan"
-                      ? /(^([a-zA-Z]){5}([0-9]){4}([a-zA-Z]){1}?$)|(^([0-9]){4}([a-zA-Z]){3}?$)/
-                      : /^\d{12}$/,
-                  message:
-                    watch("idType") === ""
-                      ? "Please select Id Type"
-                      : watch("idType") === "pan"
-                      ? "Invalid pan card number"
-                      : "Invalid adhar card number",
-                },
-              })}
-              placeholder={
-                watch("idType") === ""
-                  ? "Please select id type"
-                  : watch("idType") === "adhar"
-                  ? "Enter adhar card number"
-                  : "Enter pan card number"
-              }
-            />
-            {errors.govtIdValue && (
-              <span className="errors">{errors.govtIdValue?.message}</span>
-            )}{" "}
-            */}
-            {/* <span className="errors">{errors.govtIdValue?.message}</span> */}
           </div>
         </div>
         <label className="head-section">Contact Details</label>
@@ -480,6 +383,11 @@ const UserRegistrationForm = () => {
           </select>
         </div>
         <div className="buttons">
+          <Link to='/userdetails'>
+            <button className="submit">
+              Show Data
+            </button>
+          </Link>
           <button className="delete" onClick={() => reset()}>
             Cancel
           </button>
