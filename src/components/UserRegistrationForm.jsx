@@ -1,55 +1,178 @@
-import React,{useEffect,useState} from "react";
-import { useForm,useFormState,useWatch } from "react-hook-form";
+import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import Select from "react-select";
 import { Country, State, City } from "country-state-city";
+import { db } from "./firebase-config";
+import { collection, addDoc } from "firebase/firestore";
 
 const UserRegistrationForm = () => {
-  const schema = yup.object({
-    name: yup.string().required("Please enter name"),
-    dob: yup.string().required("Date of birth required"),
-    sex: yup.string().required("Please select sex")
-  }).required();
+  const panReg =
+    /(^([a-zA-Z]){5}([0-9]){4}([a-zA-Z]){1}?$)|(^([0-9]){4}([a-zA-Z]){3}?$)/;
+  const adharReg = /^\d{12}$/;
+
+  // const schema = yup.object().shape({
+  //   name: yup.string().required("Name is required"),
+  //   dob: yup.number().required("Age is required"),
+  //   sex: yup.string().required("Sex is required"),
+  //   // email: yup.string().email('Invalid email address'),
+  //   // mobile: yup.string().matches(/^[6-9]\d{9}$/, 'Invalid Indian mobile number'),
+  //   // emergencyContact: yup.string().matches(/^[6-9]\d{9}$/, 'Invalid Indian mobile number'),
+  //   cardType: yup.string().required("ID type is required"),
+  //   cardNumber: yup.string().when("cardType", {
+  //     is: "aadhar",
+  //     then: yup.string().matches(/^\d{12}$/, "Invalid Aadhar card number"),
+  //     otherwise: yup.string().when("cardType", {
+  //       is: "pan",
+  //       then: yup
+  //         .string()
+  //         .matches(
+  //           /^([a-zA-Z]){5}([0-9]){4}([a-zA-Z]){1}?$/,
+  //           "Invalid PAN card number"
+  //         ),
+  //     }),
+  //   }),
+  // });
+
+  const schema = yup
+    .object()
+    .shape({
+      name: yup.string().required("Please enter name"),
+      dob: yup.string().required("Date of birth required"),
+      sex: yup.string().required("Please select sex"),
+      mobileNumber: yup
+        .string()
+        .matches(
+          /^[6-9]\d{9}$/,
+          "Mobile number must be a valid Indian mobile number"
+        )
+        .nullable(),
+
+      idType: yup.string().required("ID type is required"),
+      id: yup.string().when("idType", {
+        is: "Aadhar",
+        then: yup
+          .string()
+          .matches(
+            /^\d{12}$/,
+            "Govt Id must be a valid 12-digit numeric string"
+          ),
+        otherwise: yup
+          .string()
+          .matches(
+            /^[A-Za-z]{5}\d{4}[A-Za-z]{1}$/,
+            "Govt Id must be a valid 10-digit alpha-numeric string"
+          ),
+      }),
+      emergencyNumber: yup
+        .string()
+        .matches(
+          /^[6-9]\d{9}$/,
+          "Emergency Contact Number must be a valid Indian mobile number"
+        )
+        .nullable(),
+
+      // when("cardType", {
+      //   is: "pan",
+      //   then: yup
+      //     .string()
+      //     .matches(
+      //       /^([a-zA-Z]){5}([0-9]){4}([a-zA-Z]){1}?$/,
+      //       "Invalid PAN card number"
+      //     ),
+      // }),
+      // }),
+
+      // cardNumber: yup.string().when(["cardType"], {
+      //   is: (cardType) => cardType === "pan",
+      //   then: yup.string().matches(panReg, "Invalid Pan card number"),
+      // }),
+
+      // cardType: yup.string().required(),
+      // cardNumber: yup.string().when("cardType", {
+      //   is: "pan",
+      //   then: yup.string().matches(panReg, "Invalid PAN card number"),
+      //   otherwise: yup.string().when("cardType", {
+      //     is: "adhaar",
+      //     then: yup.string().matches(adharReg, "Invalid Aadhaar card number"),
+      //   }),
+      // }),
+
+      // cardNumber: yup.string().matches(panReg, "Invalid Pan card number"),
+      // cardNumber: yup.string().matches(adharReg, "Invalid Adhaar card number"),
+    })
+    .required();
   const [countries, setCountries] = useState([]);
-  const [countryName, setCountryName] = useState("")
+  const [countryName, setCountryName] = useState("");
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
+  const userCollectionRef = collection(db, "users");
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
   } = useForm({
-    initialValues: {
-      country: "India",
-      state: null,
-      city: null
-    },
-    resolver: yupResolver(schema)
+    // initialValues: {
+    //   country: "India",
+    //   state: null,
+    //   city: null,
+    // },
+    resolver: yupResolver(schema),
   });
-  const onSubmit = (data) => console.log(data);
+  const onSubmit = async (data) => {
+    console.log(data);
+    return addDoc(userCollectionRef, {
+      name: data.name,
+      age: data.dob,
+      sex: data.sex,
+      mobile_number: data.mobileNumber || "",
+      govtId: data.govtIdValue || "",
+      gaurdian_name: data.gaurdianName || "",
+      email: data.email || "",
+      emergency_contact_number: data.emergencyNumber || "",
+      address: data.address || "",
+      country: data.country || "",
+      state: data.state || "",
+      city: data.city || "",
+      pincode: data.pincode || "",
+      occupation: data.occupation || "",
+      religion: data.religion || "",
+      marital_status: data.maritalStatus || "",
+      blood_group: data.bloodGroup || "",
+      nationality: data.nationality || "",
+    });
+  };
 
   useEffect(() => {
     let newCountryList = Country.getAllCountries();
     const updateCountries = newCountryList.map((country) => ({
       label: country.name,
       value: country.isoCode,
-      ...country
+      ...country,
     }));
     setCountries(updateCountries);
   }, []);
 
-
   const handleCountryChange = (selectedCountry) => {
     console.log("country", selectedCountry.name);
-    setCountryName(selectedCountry.name); 
+    setCountryName(selectedCountry.name);
     let states = State.getStatesOfCountry(selectedCountry.value);
-    if(states.length == 0){
-      states= State.getStatesOfCountry(selectedCountry.isoCode);
+    if (states.length == 0) {
+      states = State.getStatesOfCountry(selectedCountry.isoCode);
     }
-    setStates(states.map((state) => ({ label: state.name, value: state.value||state.isoCode, isoCode: selectedCountry.isoCode})));
+    setStates(
+      states.map((state) => ({
+        label: state.name,
+        value: state.value || state.isoCode,
+        isoCode: selectedCountry.isoCode,
+      }))
+    );
+    setCities([]);
   };
   // console.log("tabke",countries.name);
   // console.log("stateTable", states);
@@ -57,21 +180,23 @@ const UserRegistrationForm = () => {
     // console.log("state", selectedState);
     // console.log(City.getCitiesOfCountry("IN"));
     // console.log(City.getCitiesOfState(selectedState.isoCode,selectedState.value));
-    const cities = City.getCitiesOfState(selectedState.isoCode,selectedState.value);
+    const cities = City.getCitiesOfState(
+      selectedState.isoCode,
+      selectedState.value
+    );
     // console.log("cities",newCities);
     setCities(cities.map((city) => ({ label: city.name, value: city.name })));
-    console.log("city",cities);
+    console.log("city", cities);
     // console.log(selectedState)
   };
   // console.log("city",cities);
   // console.table(countries)
-  const handleCityChange = (selectedCity,selectedState) => {
-  };
-
+  const handleCityChange = (selectedCity, selectedState) => {};
 
   // const { values, setValues} = useFormState({
   //   control
   // });
+  const addRecord = async () => {};
   return (
     <div className="user-form">
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -92,8 +217,8 @@ const UserRegistrationForm = () => {
               })}
             />
             {errors.name && (
-          <span className="errors">{errors.name?.message}</span>
-        )}
+              <span className="errors">{errors.name?.message}</span>
+            )}
           </div>
           <div className="input-field">
             <label>
@@ -111,9 +236,7 @@ const UserRegistrationForm = () => {
               Sex<sup className="required">*</sup>
             </label>
             <select {...register("sex", { required: true })}>
-              <option value="">
-                Select Sex
-              </option>
+              <option value="">Select Sex</option>
               <option value="male">Male</option>
               <option value="female">Female</option>
               <option value="others">Others</option>
@@ -129,21 +252,73 @@ const UserRegistrationForm = () => {
               placeholder="Mobile number"
               {...register("mobileNumber", { required: true, maxLength: 10 })}
             />
+            {errors.mobileNumber && (
+              <span className="errors">{errors.mobileNumber?.message}</span>
+            )}
           </div>
           <div className="input-field">
-            <label>Govt Issued Id</label>
-            <select {...register("idType", { required: true })}>
-              <option value="">
-                Id Type
-              </option>
+            <label htmlFor="idType">Card Type:</label>
+            <select {...register("idType")}>
+              <option value="">--Select--</option>
+              <option value="Aadhar">Aadhar</option>
+              <option value="Pan">PAN</option>
+            </select>
+            {errors.idType && <p className="errors">{errors.idType.message}</p>}
+            <label htmlFor="cardNumber">Card Number:</label>
+            <input
+              type="text"
+              {...register("id")}
+              placeholder={
+                watch("idType") === ""
+                  ? "select card Type"
+                  : watch("idType") === "Aadhar"
+                  ? "Enter Aadhar card number"
+                  : "Enter Pan card number"
+              }
+            />
+            {errors.id && <p className="errors">{errors.id.message}</p>}
+            {/* <label>Govt Issued Id</label>
+            <select {...register("idType")}>
+              <option value="">Id Type</option>
               <option value="adhar">Adhar</option>
               <option value="pan">Pan</option>
             </select>
+
+            {/* {errors.name && (
+              <span className="errors">{errors.name?.message}</span>
+            )} */}
+            {/* {errors.idType && (
+              <span className="errors">{errors.idType?.message}</span>
+            )}
             <input
-              type="tel"
-              placeholder="Enter govt Id"
-              {...register("govtIdValue", { required: true, maxLength: 10 })}
+              {...register("govtIdValue", {
+                required: "Card number is required",
+                pattern: {
+                  value:
+                    watch("idType") === "pan"
+                      ? /(^([a-zA-Z]){5}([0-9]){4}([a-zA-Z]){1}?$)|(^([0-9]){4}([a-zA-Z]){3}?$)/
+                      : /^\d{12}$/,
+                  message:
+                    watch("idType") === ""
+                      ? "Please select Id Type"
+                      : watch("idType") === "pan"
+                      ? "Invalid pan card number"
+                      : "Invalid adhar card number",
+                },
+              })}
+              placeholder={
+                watch("idType") === ""
+                  ? "Please select id type"
+                  : watch("idType") === "adhar"
+                  ? "Enter adhar card number"
+                  : "Enter pan card number"
+              }
             />
+            {errors.govtIdValue && (
+              <span className="errors">{errors.govtIdValue?.message}</span>
+            )}{" "}
+            */}
+            {/* <span className="errors">{errors.govtIdValue?.message}</span> */}
           </div>
         </div>
         <label className="head-section">Contact Details</label>
@@ -151,9 +326,7 @@ const UserRegistrationForm = () => {
           <div className="input-field">
             <label>Guardian Details</label>
             <select {...register("gaurdianLabel", { required: true })}>
-              <option value="">
-                Select Label
-              </option>
+              <option value="">Select Label</option>
               <option value="mr">Mr</option>
               <option value="mrs">Mrs</option>
               <option value="miss">Miss</option>
@@ -189,64 +362,69 @@ const UserRegistrationForm = () => {
                 maxLength: 10,
               })}
             />
+            {errors.emergencyNumber && (
+              <span className="errors">{errors.emergencyNumber?.message}</span>
+            )}
           </div>
         </div>
         <label className="head-section">Address Details</label>
         <div className="personal-details">
-            <div className="input-field">
-          <label>Address</label>
-          <input
-            type="text"
-            placeholder="Enter Address"
-            {...register("address", { required: true })}
-          />
+          <div className="input-field">
+            <label>Address</label>
+            <input
+              type="text"
+              placeholder="Enter Address"
+              {...register("address", { required: true })}
+            />
           </div>
           <div className="input-field">
-          <label>State</label>
-          <Select {...register("state", { required: true })}
-            id= "state"
-            name= "state"
-            label="state"
-            options={states}
-            value={states.name}
-            onChange={handleStateChange}
-          />
+            <label>State</label>
+            <Select
+              {...register("state", { required: true })}
+              id="state"
+              name="state"
+              label="state"
+              options={states}
+              value={watch("state")}
+              onChange={handleStateChange}
+            />
           </div>
           <div className="input-field">
-          <label>City</label>
-          <Select {...register("city", { required: true })}
-            id="city"
-            name="city"
-            label="city"
-            value={cities.name}
-            options={cities}
-            onChange={handleCityChange}
-          />
+            <label>City</label>
+            <Select
+              {...register("city", { required: true })}
+              id="city"
+              name="city"
+              label="city"
+              value={watch("city")}
+              options={cities}
+              onChange={handleCityChange}
+            />
           </div>
           <div className="input-field">
-          <label>Country</label>
-          <Select {...register("country", { required: true })}
-            id= "country"
-            name= "country"
-            label="country"
-            options={countries}
-            value={countryName}
-            onChange={(selectedCountry) => handleCountryChange(selectedCountry)}
+            <label>Country</label>
+            <Select
+              {...register("country", { required: true })}
+              // const selectedCountry = watch("country");
+              id="country"
+              name="country"
+              label="country"
+              options={countries}
+              value={watch("country")}
+              onChange={handleCountryChange}
 
-          //     => {
-          //   setValues({ country: value, state: null, city: null }, false);
-          // }}
-          />
-              
-         
+              //     => {
+              //   setValues({ country: value, state: null, city: null }, false);
+              // }}
+            />
           </div>
           <div className="input-field">
-          <label>Pincode</label>
-          <input
-            type="text"
-            placeholder="Pincode"
-            {...register("pincode", { required: true, max: 6 })}
-          />
+            <label>Pincode</label>
+            <input
+              type="text"
+              placeholder="Pincode"
+              {...register("pincode", { required: true, max: 6 })}
+            />
           </div>
         </div>
 
@@ -263,9 +441,7 @@ const UserRegistrationForm = () => {
           <div className="input-field">
             <label>Religion</label>
             <select {...register("religion", { required: true })}>
-            <option value="">
-                Select Religion
-              </option>
+              <option value="">Select Religion</option>
               <option value="hindu">Hindu</option>
               <option value="muslim">Muslim</option>
               <option value="crishtian">Crishtian</option>
@@ -274,9 +450,7 @@ const UserRegistrationForm = () => {
           <div className="input-field">
             <label>Marital Status</label>
             <select {...register("maritalStatus", { required: true })}>
-            <option value="">
-                Select Marital Status
-              </option>
+              <option value="">Select Marital Status</option>
               <option value="married">Married</option>
               <option value="unmarried">Unmarried</option>
             </select>
@@ -284,9 +458,7 @@ const UserRegistrationForm = () => {
           <div className="input-field">
             <label>Blood Group</label>
             <select {...register("bloodGroup", { required: true })}>
-            <option value="">
-                Select Group
-              </option>
+              <option value="">Select Group</option>
               <option value="A+">A+</option>
               <option value="B+">B+</option>
               <option value="O+">O+</option>
@@ -301,17 +473,19 @@ const UserRegistrationForm = () => {
         <div className="input-field">
           <label>Nationality</label>
           <select {...register("nationality", { required: true })}>
-          <option value="">
-                Select Nationality
-              </option>
+            <option value="">Select Nationality</option>
             <option value="inidan">Inidan</option>
             <option value="bangaldeshi">Bangladesi</option>
             <option value="russian">Russian</option>
           </select>
         </div>
         <div className="buttons">
-          <button className="delete" onClick={()=> reset()}>Cancel</button>
-          <button type="submit" className="submit">Submit</button>
+          <button className="delete" onClick={() => reset()}>
+            Cancel
+          </button>
+          <button type="submit" onClick={addRecord} className="submit">
+            Submit
+          </button>
         </div>
       </form>
     </div>
